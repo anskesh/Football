@@ -1226,6 +1226,7 @@ namespace Mirror
                 return;
             }
 
+            Debug.Log("Add player");
             OnServerAddPlayer(conn);
         }
 
