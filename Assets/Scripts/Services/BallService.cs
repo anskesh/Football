@@ -12,28 +12,32 @@ namespace Services
         public BallConfiguration Configuration { get; set; }
         
         private PoolService _poolService;
+        private NetworkService _networkService;
         private float _lifeTime;
         
         public BallService()
         {
             Configuration = Engine.GetConfiguration<BallConfiguration>();
             _poolService = Engine.GetService<PoolService>();
+            _networkService = Engine.GetService<NetworkService>();
             _lifeTime = Configuration.MaxLifeTime;
 
             _poolService.OnCountChanged += OnCountChanged;
-            Engine.GetService<NetworkService>().ClientConnected += InitializeBalls;
+            _networkService.ClientConnectedEvent += InitializeBalls;
+            _networkService.StopClientEvent += OnClientDisconnect;
         }
 
         private void InitializeBalls()
         {
             _poolService.CreateNew(5, Configuration.BallTemplate.gameObject);
-            Engine.GetService<NetworkService>().ClientConnected -= InitializeBalls;
+            _networkService.ClientConnectedEvent -= InitializeBalls;
         }
 
         public void SpawnBall(NetworkIdentity owner, Vector3 position, Vector3 direction, float forceMultiplier)
         {
             var force = Configuration.MinForce + (Configuration.MaxForce - Configuration.MinForce) * forceMultiplier;
             force = Math.Clamp(force, Configuration.MinForce, Configuration.MaxForce);
+            
             var ball = _poolService.Get(Configuration.BallTemplate.gameObject, position, Quaternion.identity).GetComponent<Ball>();
             NetworkServer.Spawn(ball.gameObject);
             ball.Owner = owner;
@@ -64,12 +68,19 @@ namespace Services
             return lifeTime;
         }
 
+        private void OnClientDisconnect()
+        {
+            _networkService.ClientConnectedEvent += InitializeBalls;
+        }
+        
         public void Initialize()
         {
         }
 
         public void Destroy()
         {
+            _poolService.OnCountChanged -= OnCountChanged;
+            _networkService.StopClientEvent -= OnClientDisconnect;
             _poolService.OnCountChanged -= OnCountChanged;
         }
     }

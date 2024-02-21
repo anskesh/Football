@@ -11,8 +11,10 @@ namespace Football.UI
         [SerializeField] private Button _hostBtn;
         [SerializeField] private Button _clientBtn;
 
-        private void Awake()
+        protected override void Awake()
         {
+            base.Awake();
+            
             _hostBtn.onClick.AddListener(OnHostBtnClicked);
             _clientBtn.onClick.AddListener(OnClientBtnClicked);
         }

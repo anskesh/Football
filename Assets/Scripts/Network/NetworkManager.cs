@@ -9,9 +9,10 @@ namespace Football
 {
     public class NetworkManager : Mirror.NetworkManager
     {
-        public Action OnServerConnected;
-        public Action OnClientConnected;
-        public Action OnClientDisconnected;
+        public Action OnServerConnectedEvent;
+        public Action OnClientConnectedEvent;
+        public Action OnClientDisconnectedEvent;
+        public Action OnStopClientEvent;
 
         public override void Start()
         {
@@ -23,17 +24,17 @@ namespace Football
         public override void OnServerConnect(NetworkConnectionToClient conn)
         {
             base.OnServerConnect(conn);
-            Debug.Log("Server connect");
             
+            Debug.Log("Server connect");
             NetworkServer.RegisterHandler<PlayerSettings>(CreateCharacter);
-            OnServerConnected?.Invoke();
+            OnServerConnectedEvent?.Invoke();
         }
 
         public override void OnClientConnect()
         {
             base.OnClientConnect();
             
-            Debug.Log("client connect");
+            Debug.Log("Client connect");
             var color = Engine.GetService<NetworkService>().ColorType;
             
             var message = new PlayerSettings()
@@ -42,13 +43,12 @@ namespace Football
             };
                 
             NetworkClient.Send(message);
-            OnClientConnected?.Invoke();
+            OnClientConnectedEvent?.Invoke();
             Engine.GetService<UIService>().GetUI<NetworkConnectingUI>().Hide();
         }
 
         private void CreateCharacter(NetworkConnectionToClient conn, PlayerSettings message)
         {
-            Debug.Log("Create character");
             var gate = Engine.GetService<NetworkService>().FootballField.GetField();
             NetworkServer.AddPlayerForConnection(conn, gate.gameObject);
             gate.RPCConnectPlayer(conn, message.Color);
@@ -56,18 +56,29 @@ namespace Football
 
         public override void OnServerDisconnect(NetworkConnectionToClient conn)
         {
-            Debug.Log("Disconnect");
+            Debug.Log("Disconnect server");
             conn.identity.GetComponent<Gate>().ResetPlayer();
+            
             base.OnServerDisconnect(conn);
         }
 
         public override void OnClientDisconnect()
         {
+            Debug.Log("Disconnect client");
             Engine.GetService<InputService>().ResetCamera();
+            
             base.OnClientDisconnect();
             
             Engine.GetService<UIService>().GetUI<NetworkConnectingUI>().Show();
-            OnClientDisconnected?.Invoke();
+            OnClientDisconnectedEvent?.Invoke();
+        }
+
+        public override void OnStopClient()
+        {
+            base.OnStopClient();
+            
+            Debug.Log("StopClient");
+            OnStopClientEvent?.Invoke();
         }
     }
 }

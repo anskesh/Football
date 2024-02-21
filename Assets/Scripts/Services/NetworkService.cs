@@ -5,18 +5,17 @@ using Football.Core;
 using Mirror;
 using UI;
 using UnityEngine;
-using NetworkBehaviour = Football.Core.NetworkBehaviour;
 using NetworkManager = Football.NetworkManager;
 
 namespace Services
 {
     public class NetworkService : IService<NetworkConfiguration>
     {
-        public Action ClientConnected;
-        public Action ClientDisconnected;
+        public Action ClientConnectedEvent;
+        public Action ClientDisconnectedEvent;
+        public Action StopClientEvent;
         
         public NetworkConfiguration Configuration { get; set; }
-        public NetworkBehaviour Behaviour { get; private set; }
         
         public ScoreManager ScoreManager { get; private set; }
         public EColor ColorType { get; set; }
@@ -27,28 +26,17 @@ namespace Services
         public NetworkService()
         {
             Configuration = Engine.GetConfiguration<NetworkConfiguration>();
-            Behaviour = Engine.CreateObject("NetworkBehaviour", null, typeof(NetworkBehaviour)).GetComponent<NetworkBehaviour>();
-
-            UpdateNetworkManager();
         }
 
         public void SetNetworkManager(NetworkManager manager)
         {
             _networkManager = manager;
-            _networkManager.OnServerConnected += OnServerConnected;
-            _networkManager.OnClientConnected += OnClientConnected;
-            
-            _networkManager.OnClientDisconnected += () =>
-            {
-                ClientDisconnected?.Invoke();
-            };
+            _networkManager.OnServerConnectedEvent += OnServerConnected;
+            _networkManager.OnClientConnectedEvent += OnClientConnected;
+            _networkManager.OnClientDisconnectedEvent += OnClientDisconnected;
+            _networkManager.OnStopClientEvent += OnStopClient;
             
             Engine.GetService<UIService>().GetUI<InGameUI>().Render(_networkManager.maxConnections);
-        }
-
-        private void UpdateNetworkManager()
-        {
-            _networkManager = Engine.Instantiate(Configuration.Manager, Vector3.zero, Quaternion.identity);
         }
         
         public void SetField(FootballField field)
@@ -69,7 +57,7 @@ namespace Services
 
         private void OnClientConnected()
         {
-            ClientConnected?.Invoke();
+            ClientConnectedEvent?.Invoke();
             
             Engine.GetService<UIService>().GetUI<InGameUI>().UpdateColorSlider(ColorType);
         }
@@ -83,13 +71,24 @@ namespace Services
             NetworkServer.Spawn(ScoreManager.gameObject);
         }
 
+        private void OnClientDisconnected()
+        {
+            Debug.Log(_networkManager);
+            ClientDisconnectedEvent?.Invoke();
+        }
+
+        private void OnStopClient()
+        {
+            StopClientEvent?.Invoke();
+        }
+
         public void Initialize()
         {
         }
 
         public void Destroy()
         {
-            _networkManager.OnServerConnected -= OnServerConnected;
+            _networkManager.OnServerConnectedEvent -= OnServerConnected;
         }
     }
 }

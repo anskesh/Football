@@ -20,8 +20,8 @@ namespace Football.Core
             _resourceLoader = new ResourceLoader();
             
             AddService(new InputService());
-            AddService(new PoolService());
             AddService(new NetworkService());
+            AddService(new PoolService());
             AddService(new BallService());
             AddService(new UIService());
         }
@@ -70,6 +70,11 @@ namespace Football.Core
             gameObject.transform.SetParent(parent ? parent : Behaviour.transform);
             
             return gameObject;
+        }
+
+        public static void Destroy(GameObject gameObject, float time = 0)
+        {
+            Object.Destroy(gameObject, time);
         }
     }
 }

@@ -12,16 +12,13 @@ namespace Services
         
         private Dictionary<string, Stack<GameObject>> _cached = new Dictionary<string, Stack<GameObject>>();
         private Dictionary<string, PoolObjectCount> _poolObjectCounts = new Dictionary<string, PoolObjectCount>();
+        
         private Transform _container;
-
-        public PoolService(int count, params GameObject[] prefabs) : this()
-        {
-            CreateNew(count, prefabs);
-        }
 
         public PoolService()
         {
             _container = Engine.CreateObject("Pool").transform;
+            Engine.GetService<NetworkService>().StopClientEvent += OnClientDisconnected;
         }
 
         private GameObject SpawnHandler(SpawnMessage msg)
@@ -93,10 +90,28 @@ namespace Services
         private void SetCount(GameObject prefab, int active, int cached)
         {
             var name = prefab.name.Replace("(Clone)", "");
+            
+            if (!_poolObjectCounts.ContainsKey(name))
+                return;
+            
             _poolObjectCounts[name].Active += active;
             _poolObjectCounts[name].Cached += cached;
             
             OnCountChanged?.Invoke(name, _poolObjectCounts[name]);
+        }
+
+        private void OnClientDisconnected()
+        {
+            foreach (var objects in _cached.Values)
+            {
+                foreach (var gameObject in objects)
+                    Engine.Destroy(gameObject);
+            }
+
+            _cached = new Dictionary<string, Stack<GameObject>>();
+            _poolObjectCounts = new Dictionary<string, PoolObjectCount>();
+            
+            Debug.Log("Cleared pool");
         }
 
         public void Initialize()
@@ -105,6 +120,7 @@ namespace Services
 
         public void Destroy()
         {
+            Engine.GetService<NetworkService>().StopClientEvent -= OnClientDisconnected;
         }
 
         public class PoolObjectCount

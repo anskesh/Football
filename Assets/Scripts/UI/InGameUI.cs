@@ -30,14 +30,14 @@ namespace UI
             _colors = Engine.GetConfiguration<CommonConfiguration>().Colors;
             _sliderImage = _slider.fillRect.GetComponent<Image>();
             
-            Engine.GetService<NetworkService>().ClientConnected += Show;
-            Engine.GetService<NetworkService>().ClientDisconnected += Hide;
+            Engine.GetService<NetworkService>().ClientConnectedEvent += Show;
+            Engine.GetService<NetworkService>().ClientDisconnectedEvent += Hide;
         }
 
         private void OnDestroy()
         {
-            Engine.GetService<NetworkService>().ClientConnected -= Show;
-            Engine.GetService<NetworkService>().ClientDisconnected -= Hide;
+            Engine.GetService<NetworkService>().ClientConnectedEvent -= Show;
+            Engine.GetService<NetworkService>().ClientDisconnectedEvent -= Hide;
         }
                 
         public void Render(int count)
