@@ -230,6 +230,7 @@ MonoBehaviour:
   syncMode: 0
   syncInterval: 0
   _barrel: {fileID: 1157402837407210122}
+  _maxPressingTime: 1
 --- !u!114 &3469311580909437198
 MonoBehaviour:
   m_ObjectHideFlags: 0

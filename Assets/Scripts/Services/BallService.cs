@@ -1,4 +1,5 @@
-﻿using Configurations;
+﻿using System;
+using Configurations;
 using Football;
 using Football.Core;
 using Mirror;
@@ -20,21 +21,23 @@ namespace Services
             _lifeTime = Configuration.MaxLifeTime;
 
             _poolService.OnCountChanged += OnCountChanged;
-            Engine.GetService<NetworkService>().OnClientConnected += InitializeBalls;
+            Engine.GetService<NetworkService>().ClientConnected += InitializeBalls;
         }
 
         private void InitializeBalls()
         {
             _poolService.CreateNew(5, Configuration.BallTemplate.gameObject);
-            Engine.GetService<NetworkService>().OnClientConnected -= InitializeBalls;
+            Engine.GetService<NetworkService>().ClientConnected -= InitializeBalls;
         }
 
-        public void SpawnBall(NetworkIdentity owner, Vector3 position, Vector3 direction)
+        public void SpawnBall(NetworkIdentity owner, Vector3 position, Vector3 direction, float forceMultiplier)
         {
+            var force = Configuration.MinForce + (Configuration.MaxForce - Configuration.MinForce) * forceMultiplier;
+            force = Math.Clamp(force, Configuration.MinForce, Configuration.MaxForce);
             var ball = _poolService.Get(Configuration.BallTemplate.gameObject, position, Quaternion.identity).GetComponent<Ball>();
             NetworkServer.Spawn(ball.gameObject);
             ball.Owner = owner;
-            ball.Move(direction * Configuration.MinForce, ForceMode.Impulse, _lifeTime);
+            ball.Move(direction * force, ForceMode.Impulse, _lifeTime);
         }
 
         private void OnCountChanged(string name, PoolService.PoolObjectCount count)

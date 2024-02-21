@@ -12,14 +12,14 @@ namespace Services
 {
     public class NetworkService : IService<NetworkConfiguration>
     {
-        public Action OnClientConnected;
-        public Action OnClientDisconnected;
+        public Action ClientConnected;
+        public Action ClientDisconnected;
         
         public NetworkConfiguration Configuration { get; set; }
         public NetworkBehaviour Behaviour { get; private set; }
         
         public ScoreManager ScoreManager { get; private set; }
-        public EColor Color { get; set; }
+        public EColor ColorType { get; set; }
         public FootballField FootballField { get; private set; }
 
         private NetworkManager _networkManager;
@@ -35,15 +35,12 @@ namespace Services
         public void SetNetworkManager(NetworkManager manager)
         {
             _networkManager = manager;
-            _networkManager.OnServerConnected += CreateScoreManager;
-            _networkManager.OnClientConnected += () =>
-            {
-                OnClientConnected?.Invoke();
-            };
+            _networkManager.OnServerConnected += OnServerConnected;
+            _networkManager.OnClientConnected += OnClientConnected;
             
             _networkManager.OnClientDisconnected += () =>
             {
-                OnClientDisconnected?.Invoke();
+                ClientDisconnected?.Invoke();
             };
             
             Engine.GetService<UIService>().GetUI<InGameUI>().Render(_networkManager.maxConnections);
@@ -69,9 +66,15 @@ namespace Services
         
         public void StopHost() => _networkManager.StopHost();
         public void StopClient() => _networkManager.StopClient();
-        
 
-        private void CreateScoreManager()
+        private void OnClientConnected()
+        {
+            ClientConnected?.Invoke();
+            
+            Engine.GetService<UIService>().GetUI<InGameUI>().UpdateColorSlider(ColorType);
+        }
+        
+        private void OnServerConnected()
         {
             if (ScoreManager)
                 return;
@@ -86,7 +89,7 @@ namespace Services
 
         public void Destroy()
         {
-            _networkManager.OnServerConnected -= CreateScoreManager;
+            _networkManager.OnServerConnected -= OnServerConnected;
         }
     }
 }

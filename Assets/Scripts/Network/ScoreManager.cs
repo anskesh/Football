@@ -35,9 +35,14 @@ namespace Football
         public void ScoreGoal(NetworkIdentity sender, int receiver)
         {
             var gate = sender.GetComponent<Gate>();
-            
+
             if (gate)
+            {
+                if (gate.ID == receiver)
+                    return;
+                
                 IncreaseScore(gate.ID);
+            }
             
             DecreaseScore(receiver);
         }

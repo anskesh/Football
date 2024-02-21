@@ -1,4 +1,7 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
+using Configurations;
+using Football;
 using Football.Core;
 using Mirror;
 using Services;
@@ -13,23 +16,44 @@ namespace UI
         
         [SerializeField] private Transform _container;
         [SerializeField] private PlayerScore _scoreTemplate;
+        [SerializeField] private Slider _slider;
         
         private List<PlayerScore> _scores = new List<PlayerScore>();
+        private List<CommonConfiguration.ColorSettings> _colors;
+        private Image _sliderImage;
 
         protected override void Awake()
         {
             base.Awake();
 
             _quitButton.onClick.AddListener(OnQuitButtonClicked);
-            Engine.GetService<NetworkService>().OnClientConnected += Show;
-            Engine.GetService<NetworkService>().OnClientDisconnected += Hide;
+            _colors = Engine.GetConfiguration<CommonConfiguration>().Colors;
+            _sliderImage = _slider.fillRect.GetComponent<Image>();
+            
+            Engine.GetService<NetworkService>().ClientConnected += Show;
+            Engine.GetService<NetworkService>().ClientDisconnected += Hide;
         }
 
         private void OnDestroy()
         {
-            Engine.GetService<NetworkService>().OnClientConnected -= Show;
-            Engine.GetService<NetworkService>().OnClientDisconnected -= Hide;
+            Engine.GetService<NetworkService>().ClientConnected -= Show;
+            Engine.GetService<NetworkService>().ClientDisconnected -= Hide;
         }
+                
+        public void Render(int count)
+        {
+            if (_scores.Count > 0)
+                return;
+
+            for (var i = 0; i < count; i++)
+            {
+                var score = Instantiate(_scoreTemplate, _container);
+                score.InitID(i + 1);
+                _scores.Add(score);
+            }
+        }
+
+        #region Score
 
         public void UpdateScore(List<int> scores)
         {
@@ -46,18 +70,17 @@ namespace UI
         {
             _scores[id].ChangeColor(color);
         }
-        
-        public void Render(int count)
-        {
-            if (_scores.Count > 0)
-                return;
 
-            for (var i = 0; i < count; i++)
-            {
-                var score = Instantiate(_scoreTemplate, _container);
-                score.InitID(i + 1);
-                _scores.Add(score);
-            }
+        #endregion
+
+        public void UpdateTime(float value)
+        {
+            _slider.value = value;
+        }
+
+        public void UpdateColorSlider(EColor color)
+        {
+            _sliderImage.color = _colors.First(x => x.Type == color).Value;
         }
         
         private void OnQuitButtonClicked()

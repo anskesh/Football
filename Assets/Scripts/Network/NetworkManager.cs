@@ -34,7 +34,7 @@ namespace Football
             base.OnClientConnect();
             
             Debug.Log("client connect");
-            var color = Engine.GetService<NetworkService>().Color;
+            var color = Engine.GetService<NetworkService>().ColorType;
             
             var message = new PlayerSettings()
             {

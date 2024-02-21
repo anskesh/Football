@@ -33,7 +33,7 @@ namespace Football
 
         private void ChangeColor(EColor color)
         {
-            Engine.GetService<NetworkService>().Color = color;
+            Engine.GetService<NetworkService>().ColorType = color;
             
             var colorName = "";
 

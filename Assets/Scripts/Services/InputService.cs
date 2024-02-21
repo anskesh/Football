@@ -23,9 +23,14 @@ namespace Services
             Camera.transform.SetParent(Engine.Behaviour.transform, false);
         }
         
-        public bool GetPressedFireButton()
+        public bool IsPressedFireButton()
+        {                                                       
+            return Input.GetButton("Fire1");
+        }
+
+        public bool IsFireButtonUp()
         {
-            return Input.GetButtonDown("Fire1");
+            return Input.GetButtonUp("Fire1");
         }
         
         public Vector3 GetMousePosition()
