@@ -9,7 +9,7 @@ namespace UI
         [SerializeField] private bool _hideOnLoad;
         [SerializeField] private CanvasGroup _canvasGroup;
 
-        private void Awake()
+        protected virtual void Awake()
         {
             if (_hideOnLoad)
                 Hide();

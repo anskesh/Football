@@ -4,6 +4,8 @@ using Configurations;
 using Football.Core;
 using Mirror;
 using Services;
+using TMPro;
+using UI;
 using UnityEngine;
 using UnityEngine.Serialization;
 using NetworkBehaviour = Mirror.NetworkBehaviour;
@@ -18,12 +20,12 @@ namespace Football
         [SyncVar(hook = nameof(OnColorChange))]
         private EColor _color;
 
-        public int Id { get; private set; }
+        public int ID { get; private set; }
         public bool IsAvailable => _isAvailable;
 
-        [SerializeField] private Transform _cameraPosition;
-        [SerializeField] private Collider _collider;
         [SerializeField] private MeshRenderer[] _meshRenderers;
+        [SerializeField] private Transform _cameraPosition;
+        [SerializeField] private TextMeshProUGUI _text;
         [SerializeField] private Cannon _cannon;
 
         private CommonConfiguration _commonConfiguration;
@@ -42,7 +44,7 @@ namespace Football
             base.OnValidate();
 
             _meshRenderers = GetComponentsInChildren<MeshRenderer>();
-            _collider = GetComponentInChildren<Collider>();
+            _text = GetComponentInChildren<TextMeshProUGUI>();
             _cannon = GetComponentInChildren<Cannon>();
         }
 
@@ -79,17 +81,27 @@ namespace Football
 
         private void OnTriggerEnter(Collider other)
         {
-            if (_isAvailable || !isServer)
+            if (_isAvailable || !isLocalPlayer)
                 return;
 
             if (other.TryGetComponent(out Ball ball))
-                _networkService.ScoreManager.CmdScoreGoal(ball.Owner, Id);
+            {
+                if (ball.Owner.clientStarted)
+                    ScoreGoal(ball.Owner, ID);
+            }
+        }
+
+        [Command]
+        private void ScoreGoal(NetworkIdentity owner, int id)
+        {
+            _networkService.ScoreManager.ScoreGoal(owner, id);
         }
 
         public void Init(float offset, int id)
         {
             _offsetValue = offset;
-            Id = id;
+            ID = id;
+            _text.text = (ID + 1).ToString();
             gameObject.SetActive(false);
         }
 
@@ -98,6 +110,7 @@ namespace Football
             ChangeState(true);
             transform.position = _defaultPosition;
             _cannon.ResetRotation();
+            Engine.GetService<NetworkService>().ScoreManager.ResetScore(ID);
             _color = EColor.Default;
         }
 
@@ -132,6 +145,8 @@ namespace Football
         {
             foreach (var meshRenderer in _meshRenderers)
                 meshRenderer.material.color = color;
+            
+            Engine.GetService<UIService>().GetUI<InGameUI>().UpdateColor(ID, color);
         }
 
         private void ChangeState(bool state)

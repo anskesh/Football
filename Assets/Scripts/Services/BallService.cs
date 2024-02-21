@@ -20,13 +20,13 @@ namespace Services
             _lifeTime = Configuration.MaxLifeTime;
 
             _poolService.OnCountChanged += OnCountChanged;
-            Engine.GetService<NetworkService>().NetworkManager.OnClientConnected += InitializeBalls;
+            Engine.GetService<NetworkService>().OnClientConnected += InitializeBalls;
         }
 
         private void InitializeBalls()
         {
             _poolService.CreateNew(5, Configuration.BallTemplate.gameObject);
-            Engine.GetService<NetworkService>().NetworkManager.OnClientConnected -= InitializeBalls;
+            Engine.GetService<NetworkService>().OnClientConnected -= InitializeBalls;
         }
 
         public void SpawnBall(NetworkIdentity owner, Vector3 position, Vector3 direction)

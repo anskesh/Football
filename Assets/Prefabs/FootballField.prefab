@@ -1589,6 +1589,7 @@ MonoBehaviour:
   - {fileID: 2914301135518581870}
   - {fileID: 6522804223727295897}
   _floor: {fileID: 2796136831506371387}
+  _fieldRenderer: {fileID: 173859173091343234}
 --- !u!1 &2448460196270322196
 GameObject:
   m_ObjectHideFlags: 0

@@ -1,6 +1,8 @@
-﻿using Football.Core;
+﻿using System.Linq;
+using Football.Core;
 using Mirror;
 using Services;
+using UI;
 using UnityEngine;
 using NetworkBehaviour = Mirror.NetworkBehaviour;
 
@@ -10,51 +12,70 @@ namespace Football
     {
         public readonly SyncList<int> Scores = new SyncList<int>();
 
-        private void Start()
+        private InGameUI _ui;
+
+        private void Awake()
         {
-            if (!NetworkServer.activeHost)
-            {
-                Engine.GetService<NetworkService>().SetScoreManager(this);
-                return;
-            }
-            
-            for (var i = 0; i < NetworkServer.maxConnections; i++)
-                Scores.Add(0);
+            _ui = Engine.GetService<UIService>().GetUI<InGameUI>();
         }
 
-        public void CmdScoreGoal(NetworkIdentity sender, int receiver)
+        private void Start()
+        {
+            if (NetworkServer.activeHost)
+            {
+                for (var i = 0; i < NetworkServer.maxConnections; i++)
+                    Scores.Add(0);
+            }
+            
+            Engine.GetService<NetworkService>().SetScoreManager(this);
+            _ui.UpdateScore(Scores.ToList());
+        }
+
+        [Server]
+        public void ScoreGoal(NetworkIdentity sender, int receiver)
         {
             var gate = sender.GetComponent<Gate>();
             
             if (gate)
-                CmdIncreaseScore(gate.Id);
+                IncreaseScore(gate.ID);
             
-            CmdDecreaseScore(receiver);
+            DecreaseScore(receiver);
         }
         
-        private void CmdIncreaseScore(int id)
+        [Server]
+        private void IncreaseScore(int id)
         {
             if (Scores.Count <= id)
                 return;
 
             Scores[id]++;
+            OnScoreChanged(id, Scores[id]);
         }
         
-        private void CmdDecreaseScore(int id)
+        [Server]
+        private void DecreaseScore(int id)
         {
             if (Scores.Count <= id)
                 return;
 
             Scores[id]--;
+            OnScoreChanged(id, Scores[id]);
         }
 
-        [Command]
-        public void CmdResetScore(int id)
+        [ClientRpc]
+        private void OnScoreChanged(int id, int score)
+        {
+            _ui.UpdateScore(id, score);
+        }
+
+        [Server]
+        public void ResetScore(int id)
         {
             if (Scores.Count <= id)
                 return;
             
             Scores[id] = 0;
+            OnScoreChanged(id, Scores[id]);
         }
     }
 }

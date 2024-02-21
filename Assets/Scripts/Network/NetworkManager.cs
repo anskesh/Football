@@ -11,7 +11,15 @@ namespace Football
     {
         public Action OnServerConnected;
         public Action OnClientConnected;
-        
+        public Action OnClientDisconnected;
+
+        public override void Start()
+        {
+            base.Start();
+
+            Engine.GetService<NetworkService>().SetNetworkManager(this);
+        }
+
         public override void OnServerConnect(NetworkConnectionToClient conn)
         {
             base.OnServerConnect(conn);
@@ -50,15 +58,16 @@ namespace Football
         {
             Debug.Log("Disconnect");
             conn.identity.GetComponent<Gate>().ResetPlayer();
-            
             base.OnServerDisconnect(conn);
         }
 
         public override void OnClientDisconnect()
         {
+            Engine.GetService<InputService>().ResetCamera();
             base.OnClientDisconnect();
             
             Engine.GetService<UIService>().GetUI<NetworkConnectingUI>().Show();
+            OnClientDisconnected?.Invoke();
         }
     }
 }

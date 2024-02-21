@@ -18,6 +18,11 @@ namespace Services
             Camera = Engine.CreateObject("Camera", null, typeof(Camera)).GetComponent<Camera>();
         }
 
+        public void ResetCamera()
+        {
+            Camera.transform.SetParent(Engine.Behaviour.transform, false);
+        }
+        
         public bool GetPressedFireButton()
         {
             return Input.GetButtonDown("Fire1");

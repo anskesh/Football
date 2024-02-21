@@ -16,5 +16,5 @@ MonoBehaviour:
   MaxLifeTime: 15
   MinLifeTime: 5
   MaxBallCount: 40
-  MinForce: 10
+  MinForce: 20
   MaxForce: 50

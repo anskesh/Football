@@ -25,12 +25,12 @@ namespace Football.UI
 
         private void OnHostBtnClicked()
         {
-            Engine.GetService<NetworkService>().NetworkManager.StartHost();
+            Engine.GetService<NetworkService>().StartHost();
         }
 
         private void OnClientBtnClicked()
         {
-            Engine.GetService<NetworkService>().NetworkManager.StartClient();
+            Engine.GetService<NetworkService>().StartClient();
         }
     }
 }
