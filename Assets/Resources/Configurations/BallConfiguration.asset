@@ -13,4 +13,8 @@ MonoBehaviour:
   m_Name: BallConfiguration
   m_EditorClassIdentifier: 
   BallTemplate: {fileID: 5885175260700726275, guid: 02f68d62f22880c47b543d8309e71ce2, type: 3}
-  Force: 40
+  MaxLifeTime: 15
+  MinLifeTime: 5
+  MaxBallCount: 40
+  MinForce: 10
+  MaxForce: 50

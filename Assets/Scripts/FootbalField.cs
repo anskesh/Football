@@ -3,6 +3,7 @@ using System.Linq;
 using Football.Core;
 using Services;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Football
 {
@@ -13,10 +14,11 @@ namespace Football
         [SerializeField] private List<Gate> _gates = new List<Gate>();
         [SerializeField] private Transform _floor;
 
-        private Vector3 _target;
+        [SerializeField] private MeshRenderer _fieldRenderer;
 
         private void Awake()
         {
+            _fieldRenderer.material.color = Color.green;
             var floorSize = _floor.GetComponent<MeshRenderer>().bounds.extents.x;
             var gateBounds = _gates[0].GetBounds();
             var gateSize = gateBounds.size.x * 2 + gateBounds.extents.z;

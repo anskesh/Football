@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using Configurations;
+﻿using Configurations;
 using Football;
 using Football.Core;
 using Mirror;
@@ -12,47 +10,64 @@ namespace Services
     {
         public BallConfiguration Configuration { get; set; }
         
-        private Transform _ballContainer;
-        private List<Ball> _balls = new List<Ball>();
+        private PoolService _poolService;
+        private float _lifeTime;
         
         public BallService()
         {
-            _ballContainer = Engine.CreateObject("BallsContainer").transform;
             Configuration = Engine.GetConfiguration<BallConfiguration>();
+            _poolService = Engine.GetService<PoolService>();
+            _lifeTime = Configuration.MaxLifeTime;
+
+            _poolService.OnCountChanged += OnCountChanged;
+            Engine.GetService<NetworkService>().NetworkManager.OnClientConnected += InitializeBalls;
+        }
+
+        private void InitializeBalls()
+        {
+            _poolService.CreateNew(5, Configuration.BallTemplate.gameObject);
+            Engine.GetService<NetworkService>().NetworkManager.OnClientConnected -= InitializeBalls;
         }
 
         public void SpawnBall(NetworkIdentity owner, Vector3 position, Vector3 direction)
         {
-            var ball = GetOrCreateBall(position);
+            var ball = _poolService.Get(Configuration.BallTemplate.gameObject, position, Quaternion.identity).GetComponent<Ball>();
+            NetworkServer.Spawn(ball.gameObject);
             ball.Owner = owner;
-            ball.AddForce(direction * Configuration.Force, ForceMode.Impulse);
+            ball.Move(direction * Configuration.MinForce, ForceMode.Impulse, _lifeTime);
         }
 
-        private Ball GetOrCreateBall(Vector3 position)
+        private void OnCountChanged(string name, PoolService.PoolObjectCount count)
         {
-            Ball ball = null;
-            
-            if (_balls.All(x => x.gameObject.activeSelf))
-            {
-                ball = Engine.Instantiate(Configuration.BallTemplate, position, Quaternion.identity,
-                    _ballContainer);
-                NetworkServer.Spawn(ball.gameObject);
-                return ball;
-            }
+            if (!Configuration.BallTemplate.name.Equals(name))
+                return;
 
-            ball = _balls.First(x => x.gameObject.activeSelf == false);
-            ball.transform.position = position;
-            ball.gameObject.SetActive(true);
-            
-            return ball;
+            _lifeTime = CalculateBallLifeTime(count);
         }
         
+        private float CalculateBallLifeTime(PoolService.PoolObjectCount count)
+        {
+            var currentCount = count.Active;
+            var maxCount = Configuration.MaxBallCount;
+            var maxLifeTime = Configuration.MaxLifeTime;
+            var minLifeTime = Configuration.MinLifeTime;
+
+            var lifeTime = maxLifeTime;
+            
+            if (currentCount > maxCount)
+                lifeTime += (maxCount / (float) currentCount);
+
+            lifeTime = Mathf.Clamp(lifeTime, minLifeTime, maxLifeTime);
+            return lifeTime;
+        }
+
         public void Initialize()
         {
         }
 
         public void Destroy()
         {
+            _poolService.OnCountChanged -= OnCountChanged;
         }
     }
 }

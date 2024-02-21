@@ -40,7 +40,7 @@ namespace Football
 
         private void CreateCharacter(NetworkConnectionToClient conn, PlayerSettings message)
         {
-            Debug.Log("Create");
+            Debug.Log("Create character");
             var gate = Engine.GetService<NetworkService>().FootballField.GetField();
             NetworkServer.AddPlayerForConnection(conn, gate.gameObject);
             gate.RPCConnectPlayer(conn, message.Color);
@@ -52,6 +52,12 @@ namespace Football
             conn.identity.GetComponent<Gate>().ResetPlayer();
             
             base.OnServerDisconnect(conn);
+        }
+
+        public override void OnClientDisconnect()
+        {
+            base.OnClientDisconnect();
+            
             Engine.GetService<UIService>().GetUI<NetworkConnectingUI>().Show();
         }
     }

@@ -1,13 +1,17 @@
 ﻿using Football;
 using Football.Core;
-using UnityEngine;
 
 namespace Configurations
 {
     public class BallConfiguration : Configuration
     {
         public Ball BallTemplate;
+        
+        public float MaxLifeTime = 20f;
+        public float MinLifeTime = 5f;
+        public int MaxBallCount = 20;
 
-        [Range(0, 1000)] public float Force = 20;
+        public float MinForce = 10;
+        public float MaxForce = 50;
     }
 }

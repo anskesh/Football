@@ -20,8 +20,9 @@ namespace Football.Core
             _resourceLoader = new ResourceLoader();
             
             AddService(new InputService());
-            AddService(new BallService());
+            AddService(new PoolService());
             AddService(new NetworkService());
+            AddService(new BallService());
             AddService(new UIService());
         }
 
