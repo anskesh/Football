@@ -85,7 +85,7 @@ namespace Football
             if (!other.TryGetComponent(out Ball ball)) 
                 return;
             
-            if (ball.Owner && ball.Owner.clientStarted)
+            if (ball.Owner.TryGetComponent<Gate>(out var gate) && !gate.IsAvailable)
                 ScoreGoal(ball.Owner, ID);
         }
 
