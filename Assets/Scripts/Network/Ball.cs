@@ -34,16 +34,19 @@ namespace Football
         }
 
         [Server]
-        public void Move(Vector3 direction, ForceMode mode, float lifeTime)
+        public void Move(Vector3 force, ForceMode mode, float lifeTime)
         {
             gameObject.SetActive(true);
-            _rigidbody.AddForce(direction, mode);
+            _rigidbody.AddForce(force, mode);
+            
             StartCoroutine(Destroy(lifeTime));
         }
         
+        [Server]
         private IEnumerator Destroy(float time)
         {
             yield return new WaitForSeconds(time);
+            
             _canDestroy = true;
         }
     }

@@ -11,6 +11,8 @@ namespace Football.UI
         [SerializeField] private Button _hostBtn;
         [SerializeField] private Button _clientBtn;
 
+        private NetworkService _networkService;
+
         protected override void Awake()
         {
             base.Awake();
@@ -19,20 +21,31 @@ namespace Football.UI
             _clientBtn.onClick.AddListener(OnClientBtnClicked);
         }
 
+        private void Start()
+        {
+            _networkService = Engine.GetService<NetworkService>();
+            
+            _networkService.ClientDisconnectedEvent += Show;
+            _networkService.ClientConnectedEvent += Hide;
+        }
+
         private void OnDestroy()
         {
             _hostBtn.onClick.RemoveListener(OnHostBtnClicked);
             _clientBtn.onClick.RemoveListener(OnClientBtnClicked);
+            
+            _networkService.ClientDisconnectedEvent -= Show;
+            _networkService.ClientConnectedEvent -= Hide;
         }
 
         private void OnHostBtnClicked()
         {
-            Engine.GetService<NetworkService>().StartHost();
+            _networkService.StartHost();
         }
 
         private void OnClientBtnClicked()
         {
-            Engine.GetService<NetworkService>().StartClient();
+            _networkService.StartClient();
         }
     }
 }

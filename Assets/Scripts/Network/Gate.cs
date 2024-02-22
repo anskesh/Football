@@ -15,10 +15,8 @@ namespace Football
 {
     public class Gate : NetworkBehaviour
     {
-        [SyncVar] protected bool _isAvailable = true;
-
-        [SyncVar(hook = nameof(OnColorChange))]
-        private EColor _color;
+        [SyncVar] private bool _isAvailable = true;
+        [SyncVar(hook = nameof(OnColorChange))] private EColor _color;
 
         public int ID { get; private set; }
         public bool IsAvailable => _isAvailable;
@@ -84,34 +82,29 @@ namespace Football
             if (_isAvailable || !isLocalPlayer)
                 return;
 
-            if (other.TryGetComponent(out Ball ball))
-            {
-                if (ball.Owner && ball.Owner.clientStarted)
-                    ScoreGoal(ball.Owner, ID);
-            }
-        }
-
-        [Command]
-        private void ScoreGoal(NetworkIdentity owner, int id)
-        {
-            _networkService.ScoreManager.ScoreGoal(owner, id);
+            if (!other.TryGetComponent(out Ball ball)) 
+                return;
+            
+            if (ball.Owner && ball.Owner.clientStarted)
+                ScoreGoal(ball.Owner, ID);
         }
 
         public void Init(float offset, int id)
         {
+            _text.text = (id + 1).ToString();
             _offsetValue = offset;
             ID = id;
-            _text.text = (ID + 1).ToString();
             gameObject.SetActive(false);
         }
 
+        [Server]
         public void ResetPlayer()
         {
-            ChangeState(true);
-            transform.position = _defaultPosition;
+            _isAvailable = true;
+            _networkService.ScoreManager.ResetScore(ID);
             _cannon.ResetRotation();
-            Engine.GetService<NetworkService>().ScoreManager.ResetScore(ID);
             _color = EColor.Default;
+            transform.position = _defaultPosition;
         }
 
         public Bounds GetBounds()
@@ -119,6 +112,7 @@ namespace Football
             return _meshRenderers[0].bounds;
         }
 
+        [Client]
         private void StartMoving()
         {
             _offset = _isX ? new Vector3(_offsetValue, 0, 0) : new Vector3(0, 0, _offsetValue);
@@ -127,10 +121,12 @@ namespace Football
             var rand = Random.Range(0, 2);
 
             if (rand == 0)
+            {
                 if (_isX)
                     _target.x *= -1;
                 else
                     _target.z *= -1;
+            }
 
             _isMoving = true;
         }
@@ -149,27 +145,33 @@ namespace Football
             Engine.GetService<UIService>().GetUI<InGameUI>().UpdateColor(ID, color);
         }
 
-        private void ChangeState(bool state)
-        {
-            _isAvailable = state;
-        }
-
         [TargetRpc]
-        public void RPCConnectPlayer(NetworkConnectionToClient conn, EColor color)
+        public void RPCConnectPlayer(EColor color)
         {
             ChangeColor(color);
             gameObject.SetActive(true);
-            var camera = Engine.GetService<InputService>().Camera;
-            camera.transform.SetParent(_cameraPosition, false);
-            ChangeState(false);
+            Engine.GetService<InputService>().SetParent(_cameraPosition);
+            CmdChangeState(false);
 
             StartMoving();
+        }
+        
+        [Command]
+        private void CmdChangeState(bool state)
+        {
+            _isAvailable = state;
         }
 
         [Command]
         private void ChangeColor(EColor color)
         {
             _color = color;
+        }
+        
+        [Command]
+        private void ScoreGoal(NetworkIdentity owner, int id)
+        {
+            _networkService.ScoreManager.ScoreGoal(owner, id);
         }
 
         private void OnColorChange(EColor oldColor, EColor color)

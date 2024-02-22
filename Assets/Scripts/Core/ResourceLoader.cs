@@ -5,15 +5,15 @@ namespace Football.Core
 {
     public class ResourceLoader
     {
-        private string _path = "Assets/Resources/Configurations";
-        private string _pathForSearch = "Configurations";
+        private static string _path = "Assets/Resources/Configurations";
+        private static string _pathForSearch = "Configurations";
         
-        public T GetConfiguration<T>() where T:Configuration
+        public static T GetConfiguration<T>() where T:Configuration
         {
             var nameDef =  $"{_pathForSearch}/{typeof(T).Name}";
             var asset = Resources.Load<T>(nameDef);
             
-            if (!asset)
+            if (asset == null)
             {
                 var name =  $"{_path}/{typeof(T).Name}";
                 asset = ScriptableObject.CreateInstance<T>();

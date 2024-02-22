@@ -15,6 +15,6 @@ MonoBehaviour:
   BallTemplate: {fileID: 5885175260700726275, guid: 02f68d62f22880c47b543d8309e71ce2, type: 3}
   MaxLifeTime: 15
   MinLifeTime: 5
-  MaxBallCount: 40
+  MaxBallCount: 60
   MinForce: 20
-  MaxForce: 50
+  MaxForce: 60

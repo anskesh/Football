@@ -20,6 +20,8 @@ namespace UI
         
         private List<PlayerScore> _scores = new List<PlayerScore>();
         private List<CommonConfiguration.ColorSettings> _colors;
+
+        private NetworkService _networkService;
         private Image _sliderImage;
 
         protected override void Awake()
@@ -29,15 +31,20 @@ namespace UI
             _quitButton.onClick.AddListener(OnQuitButtonClicked);
             _colors = Engine.GetConfiguration<CommonConfiguration>().Colors;
             _sliderImage = _slider.fillRect.GetComponent<Image>();
+        }
+
+        private void Start()
+        {
+            _networkService = Engine.GetService<NetworkService>();
             
-            Engine.GetService<NetworkService>().ClientConnectedEvent += Show;
-            Engine.GetService<NetworkService>().ClientDisconnectedEvent += Hide;
+            _networkService.ClientConnectedEvent += Show;
+            _networkService.ClientDisconnectedEvent += Hide;
         }
 
         private void OnDestroy()
         {
-            Engine.GetService<NetworkService>().ClientConnectedEvent -= Show;
-            Engine.GetService<NetworkService>().ClientDisconnectedEvent -= Hide;
+            _networkService.ClientConnectedEvent -= Show;
+            _networkService.ClientDisconnectedEvent -= Hide;
         }
                 
         public void Render(int count)
@@ -86,9 +93,9 @@ namespace UI
         private void OnQuitButtonClicked()
         {
             if (NetworkServer.activeHost)
-                Engine.GetService<NetworkService>().StopHost();
+                _networkService.StopHost();
             else
-                Engine.GetService<NetworkService>().StopClient();
+                _networkService.StopClient();
         }
     }
 }

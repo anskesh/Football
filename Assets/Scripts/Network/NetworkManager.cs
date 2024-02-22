@@ -1,6 +1,5 @@
 ﻿using System;
 using Football.Core;
-using Football.UI;
 using Mirror;
 using Services;
 using UnityEngine;
@@ -44,22 +43,24 @@ namespace Football
                 
             NetworkClient.Send(message);
             OnClientConnectedEvent?.Invoke();
-            Engine.GetService<UIService>().GetUI<NetworkConnectingUI>().Hide();
         }
 
         private void CreateCharacter(NetworkConnectionToClient conn, PlayerSettings message)
         {
             var gate = Engine.GetService<NetworkService>().FootballField.GetField();
             NetworkServer.AddPlayerForConnection(conn, gate.gameObject);
-            gate.RPCConnectPlayer(conn, message.Color);
+            gate.RPCConnectPlayer(message.Color);
         }
 
         public override void OnServerDisconnect(NetworkConnectionToClient conn)
         {
             Debug.Log("Disconnect server");
-            conn.identity.GetComponent<Gate>().ResetPlayer();
+            
+            if (conn.identity.TryGetComponent<Gate>(out var gate))
+                gate.ResetPlayer();
             
             base.OnServerDisconnect(conn);
+            NetworkServer.Spawn(gate.gameObject);
         }
 
         public override void OnClientDisconnect()
@@ -69,7 +70,6 @@ namespace Football
             
             base.OnClientDisconnect();
             
-            Engine.GetService<UIService>().GetUI<NetworkConnectingUI>().Show();
             OnClientDisconnectedEvent?.Invoke();
         }
 

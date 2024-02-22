@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Football.Core;
 using Mirror;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace Services
 {
@@ -10,15 +11,18 @@ namespace Services
     {
         public Action<string, PoolObjectCount> OnCountChanged;
         
-        private Dictionary<string, Stack<GameObject>> _cached = new Dictionary<string, Stack<GameObject>>();
         private Dictionary<string, PoolObjectCount> _poolObjectCounts = new Dictionary<string, PoolObjectCount>();
+        private Dictionary<string, Stack<GameObject>> _cached = new Dictionary<string, Stack<GameObject>>();
         
         private Transform _container;
+        private NetworkService _networkService;
 
-        public PoolService()
+        public PoolService(NetworkService networkService)
         {
             _container = Engine.CreateObject("Pool").transform;
-            Engine.GetService<NetworkService>().StopClientEvent += OnClientDisconnected;
+            _networkService = networkService;
+            
+            _networkService.StopClientEvent += OnStopClient;
         }
 
         private GameObject SpawnHandler(SpawnMessage msg)
@@ -33,12 +37,18 @@ namespace Services
         {
             foreach (var prefab in prefabs)
             {
-                NetworkClient.RegisterPrefab(prefab, SpawnHandler, UnSpawnHandler);
+                RegisterPrefabs(prefab);
                 _poolObjectCounts[prefab.name] = new PoolObjectCount();
 
                 for (var i = 0; i < count; i++)
                     CreateNew(prefab);
             }
+        }
+        
+        public void RegisterPrefabs(params GameObject[] prefabs)
+        {
+            foreach (var prefab in prefabs)
+                NetworkClient.RegisterPrefab(prefab, SpawnHandler, UnSpawnHandler);
         }
 
         public GameObject Get(GameObject prefab, Vector3 position, Quaternion rotation)
@@ -66,14 +76,8 @@ namespace Services
             _cached[gameObject.name].Push(gameObject);
             SetCount(gameObject, -1, 1);
         }
-
-        public PoolObjectCount GetCount(GameObject prefab)
-        {
-            if (!_poolObjectCounts.ContainsKey(prefab.name))
-                throw new Exception("Count for this prefab doesn't exists.");
-
-            return _poolObjectCounts[prefab.name];
-        }
+        
+        public bool IsCreated(GameObject prefab) => _cached.ContainsKey($"{prefab.name}(Clone)");
 
         private void CreateNew(GameObject prefab)
         {
@@ -100,18 +104,15 @@ namespace Services
             OnCountChanged?.Invoke(name, _poolObjectCounts[name]);
         }
 
-        private void OnClientDisconnected()
+        private void OnStopClient()
         {
-            foreach (var objects in _cached.Values)
+            foreach (var poolObjectCount in _poolObjectCounts)
             {
-                foreach (var gameObject in objects)
-                    Engine.Destroy(gameObject);
+                poolObjectCount.Value.Active = 0;
+                poolObjectCount.Value.Cached = 0;
+                
+                OnCountChanged?.Invoke(poolObjectCount.Key, poolObjectCount.Value);
             }
-
-            _cached = new Dictionary<string, Stack<GameObject>>();
-            _poolObjectCounts = new Dictionary<string, PoolObjectCount>();
-            
-            Debug.Log("Cleared pool");
         }
 
         public void Initialize()
@@ -120,7 +121,7 @@ namespace Services
 
         public void Destroy()
         {
-            Engine.GetService<NetworkService>().StopClientEvent -= OnClientDisconnected;
+            _networkService.StopClientEvent -= OnStopClient;
         }
 
         public class PoolObjectCount

@@ -10,28 +10,24 @@ namespace Services
         public InputConfiguration Configuration { get; set; }
         public Camera Camera { get; private set; }
 
-        public InputService()
+        public InputService(InputConfiguration inputConfiguration)
         {
-            Configuration = Engine.GetConfiguration<InputConfiguration>();
+            Configuration = inputConfiguration;
             
             Engine.CreateObject("Input", null, typeof(EventSystem), typeof(StandaloneInputModule));
             Camera = Engine.CreateObject("Camera", null, typeof(Camera)).GetComponent<Camera>();
         }
 
-        public void ResetCamera()
+        public void SetParent(Transform parent)
         {
-            Camera.transform.SetParent(Engine.Behaviour.transform, false);
-        }
-        
-        public bool IsPressedFireButton()
-        {                                                       
-            return Input.GetButton("Fire1");
+            Camera.transform.SetParent(parent, false);
         }
 
-        public bool IsFireButtonUp()
-        {
-            return Input.GetButtonUp("Fire1");
-        }
+        public void ResetCamera() => SetParent(Engine.Behaviour.transform);
+        
+        public bool IsPressedFireButton() => Input.GetButton("Fire1");
+
+        public bool IsFireButtonUp() => Input.GetButtonUp("Fire1");
         
         public Vector3 GetMousePosition()
         {
@@ -40,7 +36,7 @@ namespace Services
             
             var position = Vector3.zero;
 
-            if (Physics.Raycast(ray, out RaycastHit hit, 100, Configuration.LayerMask))
+            if (Physics.Raycast(ray, out var hit, 100, Configuration.LayerMask))
                 position = hit.point;
             
             return position;

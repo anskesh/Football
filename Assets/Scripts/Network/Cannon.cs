@@ -39,27 +39,28 @@ namespace Football
             
             if (_inputService.IsFireButtonUp())
             {
-                CmdSpawnBall(netIdentity, _barrel.position, _barrel.forward, _pressingTime / _maxPressingTime);
+                var direction = (_inputService.GetMousePosition() - _barrel.position).normalized;
+                CmdSpawnBall(netIdentity, _barrel.position, direction, _pressingTime / _maxPressingTime);
                 _pressingTime = 0;
                 UpdateTime();
             }
 
-            if (_inputService.IsPressedFireButton())
-            {
-                _pressingTime += Time.deltaTime;
-                UpdateTime();
-            }
-        }
-
-        private void UpdateTime()
-        {
-            var percent = _pressingTime / _maxPressingTime;
-            _ui.UpdateTime(percent);
+            if (!_inputService.IsPressedFireButton()) 
+                return;
+            
+            _pressingTime += Time.deltaTime;
+            UpdateTime();
         }
 
         public void ResetRotation()
         {
             transform.rotation = _defaultRotation;
+        }
+        
+        private void UpdateTime()
+        {
+            var percent = _pressingTime / _maxPressingTime;
+            _ui.UpdateTime(percent);
         }
 
         [Command]

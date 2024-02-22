@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Configurations;
 using Services;
 using UnityEngine;
 using Object = UnityEngine.Object;
@@ -8,49 +9,47 @@ namespace Football.Core
 {
     public class Engine
     {
-        public static Dictionary<Type, IService> Services { get; private set; } = new Dictionary<Type, IService>();
         public static RuntimeBehaviour Behaviour { get; set; }
 
-        private static ResourceLoader _resourceLoader;
+        private static Dictionary<Type, IService> _services = new Dictionary<Type, IService>();
         
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         public static void Initialize()
         {
             Behaviour = new GameObject("Runtime", typeof(RuntimeBehaviour)).GetComponent<RuntimeBehaviour>();
-            _resourceLoader = new ResourceLoader();
             
-            AddService(new InputService());
-            AddService(new NetworkService());
-            AddService(new PoolService());
-            AddService(new BallService());
-            AddService(new UIService());
+            AddService(new InputService(GetConfiguration<InputConfiguration>()));
+            AddService(new UIService(GetConfiguration<UIConfiguration>()));
+            AddService(new NetworkService(GetConfiguration<NetworkConfiguration>(), GetService<UIService>()));
+            AddService(new PoolService(GetService<NetworkService>()));
+            AddService(new BallService(GetConfiguration<BallConfiguration>(), GetService<PoolService>(), GetService<NetworkService>()));
         }
 
         ~Engine()
         {
-            foreach (var service in Services)
+            foreach (var service in _services)
                 service.Value.Destroy();
         }
 
         public static T GetConfiguration<T>() where T : Configuration
         {
-            return _resourceLoader.GetConfiguration<T>();
+            return ResourceLoader.GetConfiguration<T>();
         }
         
         public static void AddService<T>(T service) where T : IService
         {
-            if (Services.ContainsKey(typeof(T)))
+            if (_services.ContainsKey(typeof(T)))
                 return;
             
-            Services.Add(typeof(T), service);
+            _services.Add(typeof(T), service);
         }
         
         public static T GetService<T>() where T : IService
         {
-            if (!Services.ContainsKey(typeof(T)))
+            if (!_services.ContainsKey(typeof(T)))
                 throw new Exception("Service doesn't exists.");
 
-            return (T) Services[typeof(T)];
+            return (T) _services[typeof(T)];
         }
 
         public static T Instantiate<T>(T prefab, Vector3 position, Quaternion rotation, Transform parent = null) where T: Object

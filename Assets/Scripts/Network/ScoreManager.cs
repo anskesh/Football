@@ -3,15 +3,13 @@ using Football.Core;
 using Mirror;
 using Services;
 using UI;
-using UnityEngine;
 using NetworkBehaviour = Mirror.NetworkBehaviour;
 
 namespace Football
 {
     public class ScoreManager : NetworkBehaviour
     {
-        public readonly SyncList<int> Scores = new SyncList<int>();
-
+        private readonly SyncList<int> _scores = new SyncList<int>();
         private InGameUI _ui;
 
         private void Awake()
@@ -24,11 +22,11 @@ namespace Football
             if (NetworkServer.activeHost)
             {
                 for (var i = 0; i < NetworkServer.maxConnections; i++)
-                    Scores.Add(0);
+                    _scores.Add(0);
             }
             
             Engine.GetService<NetworkService>().SetScoreManager(this);
-            _ui.UpdateScore(Scores.ToList());
+            _ui.UpdateScore(_scores.ToList());
         }
 
         [Server]
@@ -50,21 +48,21 @@ namespace Football
         [Server]
         private void IncreaseScore(int id)
         {
-            if (Scores.Count <= id)
+            if (_scores.Count <= id)
                 return;
 
-            Scores[id]++;
-            OnScoreChanged(id, Scores[id]);
+            _scores[id]++;
+            OnScoreChanged(id, _scores[id]);
         }
         
         [Server]
         private void DecreaseScore(int id)
         {
-            if (Scores.Count <= id)
+            if (_scores.Count <= id)
                 return;
 
-            Scores[id]--;
-            OnScoreChanged(id, Scores[id]);
+            _scores[id]--;
+            OnScoreChanged(id, _scores[id]);
         }
 
         [ClientRpc]
@@ -76,11 +74,11 @@ namespace Football
         [Server]
         public void ResetScore(int id)
         {
-            if (Scores.Count <= id)
+            if (_scores.Count <= id)
                 return;
             
-            Scores[id] = 0;
-            OnScoreChanged(id, Scores[id]);
+            _scores[id] = 0;
+            OnScoreChanged(id, _scores[id]);
         }
     }
 }

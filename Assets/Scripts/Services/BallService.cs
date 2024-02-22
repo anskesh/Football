@@ -15,43 +15,44 @@ namespace Services
         private NetworkService _networkService;
         private float _lifeTime;
         
-        public BallService()
+        public BallService(BallConfiguration configuration, PoolService poolService, NetworkService networkService)
         {
-            Configuration = Engine.GetConfiguration<BallConfiguration>();
-            _poolService = Engine.GetService<PoolService>();
-            _networkService = Engine.GetService<NetworkService>();
+            Configuration = configuration;
+            
+            _poolService = poolService;
+            _networkService = networkService;
             _lifeTime = Configuration.MaxLifeTime;
 
             _poolService.OnCountChanged += OnCountChanged;
             _networkService.ClientConnectedEvent += InitializeBalls;
-            _networkService.StopClientEvent += OnClientDisconnect;
         }
 
         private void InitializeBalls()
         {
-            _poolService.CreateNew(5, Configuration.BallTemplate.gameObject);
-            _networkService.ClientConnectedEvent -= InitializeBalls;
+            var prefab = Configuration.BallTemplate.gameObject;
+            
+            if (!_poolService.IsCreated(prefab))
+                _poolService.CreateNew(5, prefab);
+            else
+                _poolService.RegisterPrefabs(prefab);
         }
 
         public void SpawnBall(NetworkIdentity owner, Vector3 position, Vector3 direction, float forceMultiplier)
         {
-            var force = Configuration.MinForce + (Configuration.MaxForce - Configuration.MinForce) * forceMultiplier;
-            force = Math.Clamp(force, Configuration.MinForce, Configuration.MaxForce);
-            
             var ball = _poolService.Get(Configuration.BallTemplate.gameObject, position, Quaternion.identity).GetComponent<Ball>();
             NetworkServer.Spawn(ball.gameObject);
             ball.Owner = owner;
-            ball.Move(direction * force, ForceMode.Impulse, _lifeTime);
+            ball.Move(CalculateForce(direction, forceMultiplier), ForceMode.Impulse, _lifeTime);
         }
 
-        private void OnCountChanged(string name, PoolService.PoolObjectCount count)
+        private Vector3 CalculateForce(Vector3 direction, float forceMultiplier)
         {
-            if (!Configuration.BallTemplate.name.Equals(name))
-                return;
-
-            _lifeTime = CalculateBallLifeTime(count);
+            var force = Configuration.MinForce + (Configuration.MaxForce - Configuration.MinForce) * forceMultiplier;
+            force = Math.Clamp(force, Configuration.MinForce, Configuration.MaxForce);
+            
+            return direction * force + new Vector3(0, 3f, 0);
         }
-        
+ 
         private float CalculateBallLifeTime(PoolService.PoolObjectCount count)
         {
             var currentCount = count.Active;
@@ -67,12 +68,15 @@ namespace Services
             lifeTime = Mathf.Clamp(lifeTime, minLifeTime, maxLifeTime);
             return lifeTime;
         }
-
-        private void OnClientDisconnect()
-        {
-            _networkService.ClientConnectedEvent += InitializeBalls;
-        }
         
+        private void OnCountChanged(string name, PoolService.PoolObjectCount count)
+        {
+            if (!Configuration.BallTemplate.name.Equals(name))
+                return;
+
+            _lifeTime = CalculateBallLifeTime(count);
+        }
+
         public void Initialize()
         {
         }
@@ -80,8 +84,7 @@ namespace Services
         public void Destroy()
         {
             _poolService.OnCountChanged -= OnCountChanged;
-            _networkService.StopClientEvent -= OnClientDisconnect;
-            _poolService.OnCountChanged -= OnCountChanged;
+            _networkService.ClientConnectedEvent -= InitializeBalls;
         }
     }
 }

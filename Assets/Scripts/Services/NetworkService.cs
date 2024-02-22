@@ -16,16 +16,17 @@ namespace Services
         public Action StopClientEvent;
         
         public NetworkConfiguration Configuration { get; set; }
-        
         public ScoreManager ScoreManager { get; private set; }
         public EColor ColorType { get; set; }
         public FootballField FootballField { get; private set; }
 
         private NetworkManager _networkManager;
+        private UIService _uiService;
         
-        public NetworkService()
+        public NetworkService(NetworkConfiguration networkConfiguration, UIService uiService)
         {
-            Configuration = Engine.GetConfiguration<NetworkConfiguration>();
+            Configuration = networkConfiguration;
+            _uiService = uiService;
         }
 
         public void SetNetworkManager(NetworkManager manager)
@@ -36,7 +37,7 @@ namespace Services
             _networkManager.OnClientDisconnectedEvent += OnClientDisconnected;
             _networkManager.OnStopClientEvent += OnStopClient;
             
-            Engine.GetService<UIService>().GetUI<InGameUI>().Render(_networkManager.maxConnections);
+            _uiService.GetUI<InGameUI>().Render(_networkManager.maxConnections);
         }
         
         public void SetField(FootballField field)
@@ -58,8 +59,7 @@ namespace Services
         private void OnClientConnected()
         {
             ClientConnectedEvent?.Invoke();
-            
-            Engine.GetService<UIService>().GetUI<InGameUI>().UpdateColorSlider(ColorType);
+            _uiService.GetUI<InGameUI>().UpdateColorSlider(ColorType);
         }
         
         private void OnServerConnected()
@@ -73,7 +73,6 @@ namespace Services
 
         private void OnClientDisconnected()
         {
-            Debug.Log(_networkManager);
             ClientDisconnectedEvent?.Invoke();
         }
 

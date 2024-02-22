@@ -11,8 +11,8 @@ namespace Football
     public class ColorChanger : MonoBehaviour
     {
         [SerializeField] private TextMeshProUGUI _text;
-        [SerializeField] private Button _template;
         [SerializeField] private Transform _container;
+        [SerializeField] private Button _template;
 
         private void Awake()
         {
@@ -27,7 +27,10 @@ namespace Football
                 button.GetComponent<Image>().color = color.Value;
                 button.onClick.AddListener(() => ChangeColor(color.Type));
             }
-            
+        }
+
+        private void Start()
+        {
             ChangeColor(EColor.Red);
         }
 
