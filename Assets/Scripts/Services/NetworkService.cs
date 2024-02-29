@@ -52,6 +52,7 @@ namespace Services
 
         public void StartHost() => _networkManager.StartHost();
         public void StartClient() => _networkManager.StartClient();
+        public void SetNetworkAddress(string address) => _networkManager.networkAddress = address;
         
         public void StopHost() => _networkManager.StopHost();
         public void StopClient() => _networkManager.StopClient();
